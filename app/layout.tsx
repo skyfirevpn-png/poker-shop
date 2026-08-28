@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'The Vault — Poker Chip Sets',
-  description: 'Casino-grade poker chip sets, shipped across Malaysia, Singapore, Brunei & Indonesia.',
+  title: 'SAMS GAMERS - Zynga Poker Chips',
+  description: 'Zynga poker chip sets, shipped across Malaysia, Singapore, Brunei & Indonesia.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
