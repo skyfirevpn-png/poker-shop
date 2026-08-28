@@ -2,56 +2,58 @@ import { NextResponse } from 'next/server';
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
+    let payload: Record<string, any> = {};
 
-    const apiKey = process.env.HITPAY_API_KEY;
-    if (!apiKey) {
-      console.error('HITPAY_API_KEY is missing');
-      return NextResponse.json(
-        { error: 'HITPAY_API_KEY is missing from environment variables.' },
-        { status: 500 }
-      );
+    const contentType = req.headers.get('content-type') || '';
+
+    // HitPay Webhook v1 delivers payloads as x-www-form-urlencoded
+    if (contentType.includes('application/x-www-form-urlencoded')) {
+      const bodyText = await req.text();
+      const params = new URLSearchParams(bodyText);
+      params.forEach((value, key) => {
+        payload[key] = value;
+      });
+    } else {
+      payload = await req.json();
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+    console.log('HitPay Webhook Payload Received:', payload);
 
-    // Build URL-encoded parameters required by HitPay API
-    const params = new URLSearchParams();
-    params.append('amount', String(body.amount));
-    params.append('currency', body.currency || 'MYR');
-    params.append('redirect_url', `${baseUrl}/order/success`);
-    params.append('webhook', `${baseUrl}/api/webhook/hitpay`);
-    params.append('reference_number', `ORDER-${Date.now()}`);
+    // Filter for successful payment status ('completed' or 'paid')
+    const status = payload.status || payload.payment_status;
+    if (status === 'completed' || status === 'paid') {
+      const telegramToken = process.env.TELEGRAM_BOT_TOKEN;
+      const chatId = process.env.TELEGRAM_CHAT_ID;
 
-    // Pass each payment method with array key syntax
-    const paymentMethods = ['fpx', 'duitnow_qr', 'card'];
-    paymentMethods.forEach((method) => {
-      params.append('payment_methods[]', method);
-    });
+      if (telegramToken && chatId) {
+        const message = 
+`🎰 *New Order Completed!*
 
-    const response = await fetch('https://api.sandbox.hit-pay.com/v1/payment-requests', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'X-BUSINESS-API-KEY': apiKey,
-        'X-Requested-With': 'XMLHttpRequest',
-      },
-      body: params.toString(),
-    });
+💵 *Amount:* ${payload.currency || 'MYR'} ${payload.amount}
+🆔 *Reference:* \`${payload.reference_number || payload.id || 'N/A'}\`
+💳 *Payment Method:* ${payload.payment_method || 'FPX'}
+📌 *Status:* ${status.toUpperCase()}
+📅 *Date:* ${new Date().toLocaleString('en-MY', { timeZone: 'Asia/Kuala_Lumpur' })}`;
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      console.error('HitPay API Response Error:', data);
-      return NextResponse.json(data, { status: response.status });
+        // Dispatch message to Telegram Bot API
+        await fetch(`https://api.telegram.org/bot${telegramToken}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: chatId,
+            text: message,
+            parse_mode: 'Markdown',
+          }),
+        });
+      } else {
+        console.warn('Telegram Bot Token or Chat ID is missing from environment variables.');
+      }
     }
 
-    return NextResponse.json({ url: data.url });
-  } catch (error) {
-    console.error('Checkout API Route Exception:', error);
-    return NextResponse.json(
-      { error: 'Failed to create payment request.' },
-      { status: 500 }
-    );
+    // Always acknowledge HitPay with HTTP 200 OK
+    return new NextResponse('OK', { status: 200 });
+  } catch (error: any) {
+    console.error('HitPay Webhook Error:', error);
+    return new NextResponse('Internal Error', { status: 500 });
   }
 }
