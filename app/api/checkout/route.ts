@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
       amount: total.toFixed(2),
       currency: 'MYR',
       // Restrict to FPX at checkout. Remove this line to let HitPay show all enabled methods.
-      payment_methods[]: 'fpx',
+      payment_methods: 'fpx',
       reference_number: reference,
       redirect_url: `${siteUrl}/order/success?ref=${reference}`,
       webhook: `${siteUrl}/api/webhook/hitpay`,
