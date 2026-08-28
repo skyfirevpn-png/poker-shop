@@ -6,46 +6,42 @@ export async function POST(req: Request) {
 
     const apiKey = process.env.HITPAY_API_KEY;
     if (!apiKey) {
-      console.error('HITPAY_API_KEY is missing from environment variables.');
       return NextResponse.json(
-        { error: 'HITPAY_API_KEY environment variable is not set.' },
+        { error: 'HITPAY_API_KEY is missing from environment variables.' },
         { status: 500 }
       );
     }
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://poker-shop-two.vercel.app';
 
-    // Safely parse raw amount input (handles numbers, strings, or objects)
-    let rawAmount = body.amount;
-    if (typeof rawAmount === 'object' && rawAmount !== null) {
-      rawAmount = rawAmount.amount || rawAmount.total || rawAmount.value;
-    }
-
-    const parsedNumber = parseFloat(
-      String(rawAmount || '0').replace(/[^0-9.]/g, '')
+    // Parse amount strictly as a float number to satisfy HitPay's JSON validation
+    const rawAmount = body?.amount ?? 389.00;
+    const numericAmount = parseFloat(
+      String(
+        typeof rawAmount === 'object' && rawAmount !== null 
+          ? (rawAmount.amount || rawAmount.value || 389) 
+          : rawAmount
+      ).replace(/[^0-9.]/g, '')
     );
+    const finalAmount = isNaN(numericAmount) || numericAmount <= 0 ? 389.00 : numericAmount;
 
-    // Fallback default amount if parsing fails
-    const validAmount = !isNaN(parsedNumber) && parsedNumber > 0 ? parsedNumber : 389.00;
-    const formattedAmount = validAmount.toFixed(2);
-
-    // Build URL-encoded request body
-    const params = new URLSearchParams();
-    params.append('amount', formattedAmount);
-    params.append('currency', 'MYR');
-    params.append('redirect_url', `${baseUrl}/order/success`);
-    params.append('webhook', `${baseUrl}/api/webhook/hitpay`);
-    params.append('reference_number', `ORDER-${Date.now()}`);
-    params.append('payment_methods[]', 'fpx');
+    // HitPay API expects a standard JSON payload with a numeric amount and array payment methods
+    const payload = {
+      amount: finalAmount, 
+      currency: 'MYR',
+      payment_methods: ['fpx'], 
+      redirect_url: `${baseUrl}/order/success`,
+      webhook: `${baseUrl}/api/webhook/hitpay`,
+      reference_number: `ORDER-${Date.now()}`,
+    };
 
     const response = await fetch('https://api.sandbox.hit-pay.com/v1/payment-requests', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Type': 'application/json',
         'X-BUSINESS-API-KEY': apiKey,
-        'X-Requested-With': 'XMLHttpRequest',
       },
-      body: params.toString(),
+      body: JSON.stringify(payload),
     });
 
     const data = await response.json();
