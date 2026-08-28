@@ -1,72 +1,92 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { findProduct } from '@/lib/products';
+import crypto from 'crypto';
+
+// HitPay signs webhook payloads by taking every field except `hmac`,
+// sorting the keys alphabetically, concatenating `key + value` for each,
+// and HMAC-SHA256 hashing the result with your webhook salt.
+// Verify this against HitPay's current docs before going live —
+// gateways occasionally tweak the exact signing recipe.
+function verifyHitPaySignature(fields: Record<string, string>, salt: string): boolean {
+  const { hmac, ...rest } = fields;
+  if (!hmac) return false;
+
+  const sortedKeys = Object.keys(rest).sort();
+  const concatenated = sortedKeys.map((k) => `${k}${rest[k]}`).join('');
+  const expected = crypto.createHmac('sha256', salt).update(concatenated).digest('hex');
+
+  return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(hmac));
+}
+
+async function sendTelegramMessage(text: string) {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  const chatId = process.env.TELEGRAM_CHAT_ID;
+  if (!token || !chatId) {
+    console.error('Telegram not configured — skipping notification');
+    return;
+  }
+
+  await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      chat_id: chatId,
+      text,
+      parse_mode: 'Markdown',
+    }),
+  });
+}
+
+// naive in-memory de-dupe so a webhook retry doesn't double-notify you.
+// Resets on cold start — fine for a low-volume shop. For higher volume,
+// swap this for a real store (e.g. a KV table keyed by payment_id).
+const seenPayments = new Set<string>();
 
 export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json();
-    const items: { id: string; qty: number }[] = body.items || [];
-
-    if (!Array.isArray(items) || items.length === 0) {
-      return NextResponse.json({ error: 'Cart is empty' }, { status: 400 });
-    }
-
-    // Recompute the total server-side from the product catalog.
-    // Never trust a price sent from the browser.
-    let total = 0;
-    const lines: string[] = [];
-    for (const item of items) {
-      const product = findProduct(item.id);
-      if (!product || !Number.isFinite(item.qty) || item.qty < 1) {
-        return NextResponse.json({ error: `Invalid item: ${item.id}` }, { status: 400 });
-      }
-      total += product.price * item.qty;
-      lines.push(`${item.qty}x ${product.name}`);
-    }
-
-    const apiKey = process.env.HITPAY_API_KEY;
-    const apiBase = process.env.HITPAY_API_BASE || 'https://api.sandbox.hitpayapp.com';
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || `${req.nextUrl.protocol}//${req.nextUrl.host}`;
-
-    if (!apiKey) {
-      return NextResponse.json({ error: 'Payment gateway not configured' }, { status: 500 });
-    }
-
-    const reference = `order_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-
-    const params = new URLSearchParams({
-      amount: total.toFixed(2),
-      currency: 'MYR',
-      // Restrict to FPX at checkout. Remove this line to let HitPay show all enabled methods.
-      payment_methods: 'fpx',
-      reference_number: reference,
-      redirect_url: `${siteUrl}/order/success?ref=${reference}`,
-      webhook: `${siteUrl}/api/webhook/hitpay`,
-      name: 'The Vault — Poker Shop',
-      purpose: lines.join(', ').slice(0, 250),
-    });
-
-    const res = await fetch(`${apiBase}/v1/payment-requests`, {
-      method: 'POST',
-      headers: {
-        'X-BUSINESS-API-KEY': apiKey,
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'X-Requested-With': 'XMLHttpRequest',
-      },
-      body: params.toString(),
-    });
-
-    const data = await res.json();
-
-    if (!res.ok || !data.url) {
-      return NextResponse.json(
-        { error: data.message || 'HitPay could not create the payment request' },
-        { status: 502 }
-      );
-    }
-
-    return NextResponse.json({ url: data.url, reference });
-  } catch (err) {
-    console.error('checkout error', err);
-    return NextResponse.json({ error: 'Unexpected server error' }, { status: 500 });
+  const salt = process.env.HITPAY_WEBHOOK_SALT;
+  if (!salt) {
+    console.error('HITPAY_WEBHOOK_SALT not set');
+    return NextResponse.json({ error: 'Webhook not configured' }, { status: 500 });
   }
+
+  const form = await req.formData();
+  const fields: Record<string, string> = {};
+  form.forEach((value, key) => {
+    fields[key] = String(value);
+  });
+
+  const valid = verifyHitPaySignature(fields, salt);
+  if (!valid) {
+    console.error('HitPay webhook signature mismatch', fields.reference_number);
+    return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+  }
+
+  const {
+    status,
+    reference_number,
+    amount,
+    currency,
+    payment_id,
+    payment_type,
+  } = fields;
+
+  if (payment_id && seenPayments.has(payment_id)) {
+    return NextResponse.json({ ok: true, deduped: true });
+  }
+  if (payment_id) seenPayments.add(payment_id);
+
+  if (status === 'completed') {
+    const message = [
+      '✅ *New order paid*',
+      `Reference: \`${reference_number}\``,
+      `Amount: ${currency} ${amount}`,
+      `Method: ${payment_type || 'fpx'}`,
+      `Payment ID: \`${payment_id}\``,
+    ].join('\n');
+
+    await sendTelegramMessage(message);
+  } else {
+    console.log('HitPay webhook received non-completed status:', status, reference_number);
+  }
+
+  return NextResponse.json({ ok: true });
 }
