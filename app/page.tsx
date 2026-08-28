@@ -15,7 +15,8 @@ export default function Home() {
     () =>
       Object.entries(cart)
         .filter(([, qty]) => qty > 0)
-        .map(([id, qty]) => ({ product: products.find((p) => p.id === id)!, qty })),
+        .map(([id, qty]) => ({ product: products.find((p) => p.id === id)!, qty }))
+        .filter((l) => l.product !== undefined),
     [cart]
   );
 
@@ -39,6 +40,8 @@ export default function Home() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          amount: total,
+          currency: 'MYR',
           items: lines.map((l) => ({ id: l.product.id, qty: l.qty })),
         }),
       });
@@ -70,14 +73,13 @@ export default function Home() {
 
       <section className="hero wrap">
         <div>
-          <div className="eyebrow">Casino-grade chip sets · MY · SG · BN · ID</div>
-          <h1>Chips that feel like the real table.</h1>
+          <div className="eyebrow">Zynga Poker Chips Transfer · 24/7 Fast Processing</div>
+          <h1>Zynga Chips Direct Transfer</h1>
           <p>
-            Clay and ceramic poker sets built for players who notice the weight in their hand and
-            the snap of a good shuffle. Ordered today, on your table this week.
+            Safe and instant transfer directly to your Zynga Poker account. Select your desired package below to checkout.
           </p>
           <a className="hero-cta" href="#shop">
-            Shop chip sets ↓
+            View Price List ↓
           </a>
           <div className="hero-note">FPX · DuitNow · Cards accepted at checkout</div>
         </div>
@@ -90,28 +92,66 @@ export default function Home() {
       </section>
 
       <div id="shop" className="section-head wrap">
-        <h2>The catalog</h2>
-        <span>{products.length} items</span>
+        <h2>Chip Packages</h2>
+        <span>{products.length} options</span>
       </div>
 
-      <div className="grid wrap">
+      <div className="wrap flex flex-col gap-3" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
         {products.map((p) => (
-          <article className="card" key={p.id}>
-            <div
-              className="chip-badge"
-              style={{
-                background: `conic-gradient(${p.stripeColor} 0 25%, var(--cream) 0 50%, ${p.stripeColor} 0 75%, var(--cream) 0 100%)`,
-              }}
-            >
-              <b>{p.pieces.split('pc')[0].split(' ')[0]}</b>
-              <span>{p.pieces.includes('pc') ? 'PCS' : ''}</span>
+          <article 
+            className="card" 
+            key={p.id}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '1rem',
+              gridTemplateColumns: 'none',
+              border: p.badge?.includes('JIMAT') || p.badge?.includes('HOT') ? '1px solid #C9A227' : undefined,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <div
+                className="chip-badge"
+                style={{
+                  position: 'static',
+                  width: '42px',
+                  height: '42px',
+                  minWidth: '42px',
+                  fontSize: '0.75rem',
+                  background: `conic-gradient(${p.stripeColor} 0 25%, var(--cream) 0 50%, ${p.stripeColor} 0 75%, var(--cream) 0 100%)`,
+                }}
+              >
+                <b>{p.pieces}</b>
+              </div>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <h3 style={{ margin: 0, fontSize: '1.1rem' }}>{p.name}</h3>
+                  {p.badge && (
+                    <span 
+                      className="card-tag"
+                      style={{ 
+                        position: 'static', 
+                        display: 'inline-block',
+                        fontSize: '0.7rem',
+                        padding: '0.1rem 0.4rem',
+                        backgroundColor: p.badge.includes('JIMAT') ? '#B33A3A' : '#C9A227',
+                        color: '#fff'
+                      }}
+                    >
+                      {p.badge}
+                    </span>
+                  )}
+                </div>
+                <p style={{ margin: 0, fontSize: '0.85rem', opacity: 0.8 }}>{p.description}</p>
+              </div>
             </div>
-            <div className="card-tag">{p.badge}</div>
-            <h3>{p.name}</h3>
-            <p>{p.description}</p>
-            <div className="card-foot">
-              <div className="price">RM {p.price.toFixed(2)}</div>
-              <button className="add-btn" onClick={() => addToCart(p.id)}>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginLeft: '1rem' }}>
+              <div className="price" style={{ fontSize: '1.2rem', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
+                RM {p.price.toFixed(2)}
+              </div>
+              <button className="add-btn" onClick={() => addToCart(p.id)} style={{ whiteSpace: 'nowrap' }}>
                 Add to cart
               </button>
             </div>
@@ -119,9 +159,9 @@ export default function Home() {
         ))}
       </div>
 
-      <footer className="foot wrap">
+      <footer className="foot wrap" style={{ marginTop: '3rem' }}>
         <span>© {new Date().getFullYear()} The Vault</span>
-        <span>Shipping to Malaysia, Singapore, Brunei & Indonesia</span>
+        <span>Instant Zynga Poker Chip Delivery</span>
       </footer>
 
       {drawerOpen && (
@@ -134,7 +174,7 @@ export default function Home() {
             <h2>Your cart</h2>
 
             {lines.length === 0 ? (
-              <div className="cart-empty">Nothing in here yet. Add a set to get started.</div>
+              <div className="cart-empty">Nothing in here yet. Add a chip package to get started.</div>
             ) : (
               <div>
                 {lines.map((l) => (
