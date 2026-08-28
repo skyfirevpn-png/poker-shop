@@ -6,30 +6,33 @@ export async function POST(req: Request) {
 
     const apiKey = process.env.HITPAY_API_KEY;
     if (!apiKey) {
+      console.error('HITPAY_API_KEY is missing from environment variables.');
       return NextResponse.json(
-        { error: 'HITPAY_API_KEY is missing from environment variables.' },
+        { error: 'HITPAY_API_KEY environment variable is not set.' },
         { status: 500 }
       );
     }
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://poker-shop-two.vercel.app';
 
-    // Parse amount strictly as a float number to satisfy HitPay's JSON validation
-    const rawAmount = body?.amount ?? 389.00;
-    const numericAmount = parseFloat(
-      String(
-        typeof rawAmount === 'object' && rawAmount !== null 
-          ? (rawAmount.amount || rawAmount.value || 389) 
-          : rawAmount
-      ).replace(/[^0-9.]/g, '')
-    );
-    const finalAmount = isNaN(numericAmount) || numericAmount <= 0 ? 389.00 : numericAmount;
+    // Safely parse dynamic amount sent from cart (e.g. 649.00, 45.00)
+    let rawAmount = body?.amount;
 
-    // HitPay API expects a standard JSON payload with a numeric amount and array payment methods
+    if (typeof rawAmount === 'object' && rawAmount !== null) {
+      rawAmount = rawAmount.amount || rawAmount.value || rawAmount.total;
+    }
+
+    const parsedNumber = parseFloat(
+      String(rawAmount ?? '').replace(/[^0-9.]/g, '')
+    );
+
+    // Use dynamic amount if valid, otherwise fallback
+    const finalAmount = !isNaN(parsedNumber) && parsedNumber > 0 ? parsedNumber : 389.00;
+
     const payload = {
-      amount: finalAmount, 
-      currency: 'MYR',
-      payment_methods: ['fpx'], 
+      amount: finalAmount,
+      currency: body?.currency || 'MYR',
+      payment_methods: ['fpx'],
       redirect_url: `${baseUrl}/order/success`,
       webhook: `${baseUrl}/api/webhook/hitpay`,
       reference_number: `ORDER-${Date.now()}`,
@@ -47,7 +50,7 @@ export async function POST(req: Request) {
     const data = await response.json();
 
     if (!response.ok || !data.url) {
-      console.error('HitPay API Error Response:', data);
+      console.error('HitPay API Response Error:', data);
       return NextResponse.json(
         { error: data.message || 'Payment creation failed.', details: data },
         { status: response.status || 400 }
