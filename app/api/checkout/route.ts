@@ -8,26 +8,27 @@ export async function POST(req: Request) {
     if (!apiKey) {
       console.error('HITPAY_API_KEY is missing from environment variables.');
       return NextResponse.json(
-        { error: 'HITPAY_API_KEY is missing.' },
+        { error: 'HITPAY_API_KEY environment variable is not set.' },
         { status: 500 }
       );
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://poker-shop-two.vercel.app';
 
-    // Build URL-encoded parameters required by HitPay API
-    const params = new URLSearchParams();
-    params.append('amount', String(body.amount));
-    params.append('currency', body.currency || 'MYR');
-    params.append('redirect_url', `${baseUrl}/order/success`);
-    params.append('webhook', `${baseUrl}/api/webhook/hitpay`);
-    params.append('reference_number', `ORDER-${Date.now()}`);
+    // Build URL-encoded string manually to ensure correct HitPay array syntax
+    const payloadParts: string[] = [
+      `amount=${encodeURIComponent(String(body.amount))}`,
+      `currency=${encodeURIComponent(body.currency || 'MYR')}`,
+      `redirect_url=${encodeURIComponent(`${baseUrl}/order/success`)}`,
+      `webhook=${encodeURIComponent(`${baseUrl}/api/webhook/hitpay`)}`,
+      `reference_number=${encodeURIComponent(`ORDER-${Date.now()}`)}`,
+      // Repeated array parameters for HitPay form-urlencoded endpoint
+      'payment_methods[]=fpx',
+      'payment_methods[]=duitnow_qr',
+      'payment_methods[]=card',
+    ];
 
-    // Append each payment method using the payment_methods[] key
-    const paymentMethods = ['fpx', 'duitnow_qr'];
-    paymentMethods.forEach((method) => {
-      params.append('payment_methods[]', method);
-    });
+    const requestBody = payloadParts.join('&');
 
     const response = await fetch('https://api.sandbox.hit-pay.com/v1/payment-requests', {
       method: 'POST',
@@ -36,21 +37,21 @@ export async function POST(req: Request) {
         'X-BUSINESS-API-KEY': apiKey,
         'X-Requested-With': 'XMLHttpRequest',
       },
-      body: params.toString(),
+      body: requestBody,
     });
 
     const data = await response.json();
 
     if (!response.ok) {
-      console.error('HitPay API Response Error:', data);
+      console.error('HitPay API Returned Error:', data);
       return NextResponse.json(data, { status: response.status });
     }
 
     return NextResponse.json({ url: data.url });
   } catch (error) {
-    console.error('Checkout API Exception:', error);
+    console.error('Checkout Exception:', error);
     return NextResponse.json(
-      { error: 'Failed to create payment request.' },
+      { error: 'Failed to process checkout.' },
       { status: 500 }
     );
   }
