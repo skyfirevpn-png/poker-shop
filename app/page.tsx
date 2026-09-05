@@ -57,46 +57,81 @@ export default function Home() {
   }
 
   return (
-    <>
-      <header className="topbar">
-        <div className="topbar-inner">
-          <div className="logo">
-            <span className="logo-mark" />
-            The Vault
+    <div style={{ backgroundColor: '#0f0505', color: '#f5f5f5', minHeight: '100vh', fontFamily: 'sans-serif' }}>
+      {/* Top Header */}
+      <header className="topbar" style={{ backgroundColor: '#1a0808', borderBottom: '2px solid #da1f26' }}>
+        <div className="topbar-inner" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 2rem' }}>
+          <div className="logo" style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#fff', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span style={{ color: '#da1f26', fontSize: '1.8rem' }}>♠</span> Sams Gamer
           </div>
-          <button className="cart-toggle" onClick={() => setDrawerOpen(true)}>
+          <button 
+            className="cart-toggle" 
+            onClick={() => setDrawerOpen(true)}
+            style={{
+              backgroundColor: '#da1f26',
+              color: '#fff',
+              border: 'none',
+              padding: '0.5rem 1.2rem',
+              borderRadius: '20px',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+            }}
+          >
             Cart
-            {itemCount > 0 && <span className="cart-count">{itemCount}</span>}
+            {itemCount > 0 && (
+              <span className="cart-count" style={{ backgroundColor: '#ffd700', color: '#000', borderRadius: '50%', padding: '0.1rem 0.5rem', fontSize: '0.8rem' }}>
+                {itemCount}
+              </span>
+            )}
           </button>
         </div>
       </header>
 
-      <section className="hero wrap">
+      {/* Zynga Style Hero */}
+      <section className="hero wrap" style={{ textAlign: 'center', padding: '3rem 1rem', background: 'radial-gradient(circle, #3d0c0e 0%, #0f0505 100%)' }}>
         <div>
-          <div className="eyebrow">Zynga Poker Chips Transfer · 24/7 Fast Processing</div>
-          <h1>Zynga Chips Direct Transfer</h1>
-          <p>
-            Safe and instant transfer directly to your Zynga Poker account. Select your desired package below to checkout.
+          <div className="eyebrow" style={{ color: '#ffd700', letterSpacing: '2px', fontWeight: 'bold', fontSize: '0.9rem' }}>
+            OFFICIAL ZYNGA POKER CHIPS STORE
+          </div>
+          <h1 style={{ fontSize: '2.5rem', margin: '0.5rem 0', color: '#fff', textTransform: 'uppercase' }}>
+            Sams Gamer Shop
+          </h1>
+          <p style={{ color: '#ccc', maxWidth: '600px', margin: '0 auto 1.5rem auto' }}>
+            Safe, fast, and instant Zynga Poker chips reload directly to your account. 24/7 automated delivery support.
           </p>
-          <a className="hero-cta" href="#shop">
-            View Price List ↓
+          <a 
+            className="hero-cta" 
+            href="#shop"
+            style={{
+              display: 'inline-block',
+              backgroundColor: '#ffd700',
+              color: '#000',
+              padding: '0.8rem 2rem',
+              borderRadius: '25px',
+              fontWeight: 'bold',
+              textDecoration: 'none',
+              boxShadow: '0 0 15px rgba(255, 215, 0, 0.4)',
+            }}
+          >
+            BUY CHIPS NOW ↓
           </a>
-          <div className="hero-note">FPX · DuitNow · Cards accepted at checkout</div>
-        </div>
-        <div className="chip-stack" aria-hidden="true">
-          <div className="chip chip-1" />
-          <div className="chip chip-2" />
-          <div className="chip chip-3" />
-          <div className="chip chip-4" />
+          <div className="hero-note" style={{ marginTop: '1rem', fontSize: '0.85rem', color: '#888' }}>
+            Supports DuitNow QR · FPX Online Banking · Touch 'n Go
+          </div>
         </div>
       </section>
 
-      <div id="shop" className="section-head wrap">
-        <h2>Chip Packages</h2>
-        <span>{products.length} options</span>
+      {/* Catalog Title */}
+      <div id="shop" className="section-head wrap" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 2rem', maxWidth: '900px', margin: '0 auto' }}>
+        <h2 style={{ color: '#ffd700', borderLeft: '4px solid #da1f26', paddingLeft: '0.5rem' }}>CHIP PACKAGES</h2>
+        <span style={{ color: '#aaa' }}>{products.length} packages available</span>
       </div>
 
-      <div className="wrap flex flex-col gap-3" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+      {/* Product List */}
+      <div className="wrap" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxWidth: '900px', margin: '0 auto', padding: '0 1rem' }}>
         {products.map((p) => (
           <article 
             className="card" 
@@ -105,112 +140,172 @@ export default function Home() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              padding: '1rem',
-              gridTemplateColumns: 'none',
-              border: p.badge?.includes('JIMAT') || p.badge?.includes('HOT') ? '1px solid #C9A227' : undefined,
+              padding: '1rem 1.2rem',
+              backgroundColor: '#1c0a0b',
+              borderRadius: '8px',
+              border: p.badge?.includes('JIMAT') || p.badge?.includes('HOT') ? '1px solid #ffd700' : '1px solid #331214',
+              boxShadow: '0 4px 10px rgba(0,0,0,0.5)',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
               <div
-                className="chip-badge"
                 style={{
-                  position: 'static',
-                  width: '42px',
-                  height: '42px',
-                  minWidth: '42px',
-                  fontSize: '0.75rem',
-                  background: `conic-gradient(${p.stripeColor} 0 25%, var(--cream) 0 50%, ${p.stripeColor} 0 75%, var(--cream) 0 100%)`,
+                  width: '45px',
+                  height: '45px',
+                  minWidth: '45px',
+                  borderRadius: '50%',
+                  backgroundColor: '#da1f26',
+                  color: '#fff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 'bold',
+                  fontSize: '0.8rem',
+                  border: '2px solid #ffd700',
                 }}
               >
-                <b>{p.pieces}</b>
+                {p.pieces}
               </div>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <h3 style={{ margin: 0, fontSize: '1.1rem' }}>{p.name}</h3>
+                  <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#fff' }}>{p.name}</h3>
                   {p.badge && (
                     <span 
-                      className="card-tag"
                       style={{ 
-                        position: 'static', 
-                        display: 'inline-block',
                         fontSize: '0.7rem',
                         padding: '0.1rem 0.4rem',
-                        backgroundColor: p.badge.includes('JIMAT') ? '#B33A3A' : '#C9A227',
-                        color: '#fff'
+                        borderRadius: '4px',
+                        backgroundColor: p.badge.includes('JIMAT') ? '#da1f26' : '#ffd700',
+                        color: p.badge.includes('JIMAT') ? '#fff' : '#000',
+                        fontWeight: 'bold',
                       }}
                     >
                       {p.badge}
                     </span>
                   )}
                 </div>
-                <p style={{ margin: 0, fontSize: '0.85rem', opacity: 0.8 }}>{p.description}</p>
+                <p style={{ margin: 0, fontSize: '0.85rem', color: '#aaa' }}>{p.description}</p>
               </div>
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginLeft: '1rem' }}>
-              <div className="price" style={{ fontSize: '1.2rem', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
+              <div className="price" style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#ffd700', whiteSpace: 'nowrap' }}>
                 RM {p.price.toFixed(2)}
               </div>
-              <button className="add-btn" onClick={() => addToCart(p.id)} style={{ whiteSpace: 'nowrap' }}>
-                Add to cart
+              <button 
+                onClick={() => addToCart(p.id)} 
+                style={{
+                  backgroundColor: '#da1f26',
+                  color: '#fff',
+                  border: 'none',
+                  padding: '0.5rem 1rem',
+                  borderRadius: '6px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                Add
               </button>
             </div>
           </article>
         ))}
       </div>
 
-      <footer className="foot wrap" style={{ marginTop: '3rem' }}>
-        <span>© {new Date().getFullYear()} The Vault</span>
-        <span>Instant Zynga Poker Chip Delivery</span>
+      {/* Footer */}
+      <footer className="foot wrap" style={{ marginTop: '3rem', padding: '2rem', textAlign: 'center', borderTop: '1px solid #220b0c', color: '#666' }}>
+        <span>© {new Date().getFullYear()} Sams Gamer · Zynga Chip Service</span>
       </footer>
 
+      {/* Cart Drawer Overlay */}
       {drawerOpen && (
         <>
-          <div className="overlay" onClick={() => setDrawerOpen(false)} />
-          <div className="drawer">
-            <button className="drawer-close" onClick={() => setDrawerOpen(false)} aria-label="Close cart">
-              ✕
-            </button>
-            <h2>Your cart</h2>
-
-            {lines.length === 0 ? (
-              <div className="cart-empty">Nothing in here yet. Add a chip package to get started.</div>
-            ) : (
-              <div>
-                {lines.map((l) => (
-                  <div className="line-item" key={l.product.id}>
-                    <div>
-                      <div className="line-item-name">{l.product.name}</div>
-                      <div className="line-item-meta">RM {l.product.price.toFixed(2)} each</div>
-                    </div>
-                    <div className="qty-controls">
-                      <button onClick={() => setQty(l.product.id, l.qty - 1)}>−</button>
-                      {l.qty}
-                      <button onClick={() => setQty(l.product.id, l.qty + 1)}>+</button>
-                    </div>
-                  </div>
-                ))}
+          <div 
+            className="overlay" 
+            onClick={() => setDrawerOpen(false)} 
+            style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 40 }}
+          />
+          <div 
+            className="drawer"
+            style={{
+              position: 'fixed',
+              top: 0,
+              right: 0,
+              bottom: 0,
+              width: '100%',
+              maxWidth: '400px',
+              backgroundColor: '#140607',
+              borderLeft: '2px solid #da1f26',
+              padding: '1.5rem',
+              zIndex: 50,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+            }}
+          >
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                <h2 style={{ margin: 0, color: '#ffd700' }}>Your Cart</h2>
+                <button 
+                  onClick={() => setDrawerOpen(false)} 
+                  style={{ background: 'none', border: 'none', color: '#fff', fontSize: '1.5rem', cursor: 'pointer' }}
+                >
+                  ✕
+                </button>
               </div>
-            )}
 
-            <div className="cart-footer">
-              <div className="cart-total">
+              {lines.length === 0 ? (
+                <div style={{ color: '#888', textAlign: 'center', padding: '2rem 0' }}>Your cart is empty. Add a chip package to continue.</div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {lines.map((l) => (
+                    <div key={l.product.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '0.8rem', borderBottom: '1px solid #280d0f' }}>
+                      <div>
+                        <div style={{ fontWeight: 'bold', color: '#fff' }}>{l.product.name}</div>
+                        <div style={{ fontSize: '0.85rem', color: '#ffd700' }}>RM {l.product.price.toFixed(2)} each</div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <button onClick={() => setQty(l.product.id, l.qty - 1)} style={{ padding: '0.2rem 0.6rem', background: '#280d0f', border: 'none', color: '#fff', borderRadius: '4px' }}>−</button>
+                        <span style={{ color: '#fff', fontWeight: 'bold' }}>{l.qty}</span>
+                        <button onClick={() => setQty(l.product.id, l.qty + 1)} style={{ padding: '0.2rem 0.6rem', background: '#280d0f', border: 'none', color: '#fff', borderRadius: '4px' }}>+</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="cart-footer" style={{ borderTop: '1px solid #280d0f', paddingTop: '1rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.2rem', fontWeight: 'bold', marginBottom: '1rem', color: '#fff' }}>
                 <span>Total</span>
-                <span>RM {total.toFixed(2)}</span>
+                <span style={{ color: '#ffd700' }}>RM {total.toFixed(2)}</span>
               </div>
               <button
-                className="checkout-btn"
                 disabled={lines.length === 0 || placing}
                 onClick={checkout}
+                style={{
+                  width: '100%',
+                  padding: '0.8rem',
+                  backgroundColor: lines.length === 0 ? '#444' : '#da1f26',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontWeight: 'bold',
+                  fontSize: '1rem',
+                  cursor: lines.length === 0 ? 'not-allowed' : 'pointer',
+                  boxShadow: lines.length > 0 ? '0 0 10px rgba(218, 31, 38, 0.5)' : 'none',
+                }}
               >
                 {placing ? 'Redirecting to payment…' : 'Checkout'}
               </button>
-              {error && <div className="checkout-note" style={{ color: 'var(--red)' }}>{error}</div>}
-              <div className="checkout-note">Secure payment via HitPay · FPX, DuitNow, cards</div>
+              {error && <div style={{ color: '#ff4d4d', marginTop: '0.5rem', fontSize: '0.85rem' }}>{error}</div>}
+              <div style={{ textAlign: 'center', marginTop: '0.8rem', fontSize: '0.75rem', color: '#777' }}>
+                Secure Checkout via HitPay · DuitNow QR, FPX, Cards
+              </div>
             </div>
           </div>
         </>
       )}
-    </>
+    </div>
   );
 }
