@@ -17,7 +17,6 @@ export async function POST(req: Request) {
 
     // Safely parse dynamic amount sent from cart
     let rawAmount = body?.amount;
-
     if (typeof rawAmount === 'object' && rawAmount !== null) {
       rawAmount = rawAmount.amount || rawAmount.value || rawAmount.total;
     }
@@ -29,11 +28,10 @@ export async function POST(req: Request) {
     // Use dynamic amount if valid, otherwise fallback
     const finalAmount = !isNaN(parsedNumber) && parsedNumber > 0 ? parsedNumber : 389.00;
 
-    // Send both FPX and DuitNow QR as accepted payment methods
+    // Omitting payment_methods allows HitPay to display all enabled options (FPX, DuitNow QR, Cards) from your dashboard settings
     const payload = {
       amount: finalAmount,
       currency: body?.currency || 'MYR',
-      payment_methods: ['fpx', 'duitnow_qr'],
       redirect_url: `${baseUrl}/order/success`,
       webhook: `${baseUrl}/api/webhook/hitpay`,
       reference_number: `ORDER-${Date.now()}`,
