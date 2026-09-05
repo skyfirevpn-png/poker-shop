@@ -6,7 +6,7 @@ export async function POST(req: Request) {
 
     const contentType = req.headers.get('content-type') || '';
 
-    // HitPay Webhook v1 delivers payloads as x-www-form-urlencoded
+    // Parse URL-encoded or JSON webhook payload from HitPay
     if (contentType.includes('application/x-www-form-urlencoded')) {
       const bodyText = await req.text();
       const params = new URLSearchParams(bodyText);
@@ -19,19 +19,38 @@ export async function POST(req: Request) {
 
     console.log('HitPay Webhook Payload Received:', payload);
 
-    // Filter for successful payment status ('completed' or 'paid')
+    // Filter for successful payment status
     const status = payload.status || payload.payment_status;
     if (status === 'completed' || status === 'paid') {
       const telegramToken = process.env.TELEGRAM_BOT_TOKEN;
       const chatId = process.env.TELEGRAM_CHAT_ID;
 
       if (telegramToken && chatId) {
+        // Dynamically detect the payment method from HitPay's response
+        const rawMethod = (
+          payload.payment_method || 
+          payload.payment_type || 
+          payload.payment_method_type || 
+          'FPX'
+        ).toString().toLowerCase();
+
+        let displayMethod = 'FPX (Online Banking)';
+        if (rawMethod.includes('qr') || rawMethod.includes('duitnow')) {
+          displayMethod = 'DuitNow QR';
+        } else if (rawMethod.includes('card') || rawMethod.includes('visa') || rawMethod.includes('master')) {
+          displayMethod = 'Credit / Debit Card';
+        } else if (rawMethod.includes('fpx')) {
+          displayMethod = 'FPX (Online Banking)';
+        } else {
+          displayMethod = rawMethod.toUpperCase();
+        }
+
         const message = 
 `🎰 *New Order Completed!*
 
 💵 *Amount:* ${payload.currency || 'MYR'} ${payload.amount}
 🆔 *Reference:* \`${payload.reference_number || payload.id || 'N/A'}\`
-💳 *Payment Method:* ${payload.payment_method || 'FPX'}
+💳 *Payment Method:* ${displayMethod}
 📌 *Status:* ${status.toUpperCase()}
 📅 *Date:* ${new Date().toLocaleString('en-MY', { timeZone: 'Asia/Kuala_Lumpur' })}`;
 
@@ -50,7 +69,6 @@ export async function POST(req: Request) {
       }
     }
 
-    // Always acknowledge HitPay with HTTP 200 OK
     return new NextResponse('OK', { status: 200 });
   } catch (error: any) {
     console.error('HitPay Webhook Error:', error);
