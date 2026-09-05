@@ -15,7 +15,7 @@ export async function POST(req: Request) {
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://poker-shop-two.vercel.app';
 
-    // Safely parse dynamic amount sent from cart (e.g. 649.00, 45.00)
+    // Safely parse dynamic amount sent from cart
     let rawAmount = body?.amount;
 
     if (typeof rawAmount === 'object' && rawAmount !== null) {
@@ -29,10 +29,11 @@ export async function POST(req: Request) {
     // Use dynamic amount if valid, otherwise fallback
     const finalAmount = !isNaN(parsedNumber) && parsedNumber > 0 ? parsedNumber : 389.00;
 
+    // Send both FPX and DuitNow QR as accepted payment methods
     const payload = {
       amount: finalAmount,
       currency: body?.currency || 'MYR',
-      payment_methods: ['fpx'],
+      payment_methods: ['fpx', 'duitnow_qr'],
       redirect_url: `${baseUrl}/order/success`,
       webhook: `${baseUrl}/api/webhook/hitpay`,
       reference_number: `ORDER-${Date.now()}`,
