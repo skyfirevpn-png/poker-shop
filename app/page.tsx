@@ -203,7 +203,7 @@ export default function Home() {
                 disabled={lines.length === 0 || placing}
                 onClick={checkout}
               >
-                {placing ? 'Redirecting to payment…' : 'Checkout with FPX'}
+                {placing ? 'Redirecting to payment…' : 'Checkout'}
               </button>
               {error && <div className="checkout-note" style={{ color: 'var(--red)' }}>{error}</div>}
               <div className="checkout-note">Secure payment via HitPay · FPX, DuitNow, cards</div>
